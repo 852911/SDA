@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const authMiddleware = require("../middlewares/authMiddleware");
+const groupController = require("../controllers/studyGroupController");
 
-// Example route
-router.get('/', (req, res) => {
-  res.send("group route works");
-});
+// Route: Get total count of study groups
+router.get("/no-of-groups", authMiddleware, groupController.getTotalGroups);
 
-module.exports = router;  // ✅ must export the router itself
+// Other study group routes can go here
+// e.g., router.post("/create", authMiddleware, groupController.createGroup);
+
+module.exports = router;

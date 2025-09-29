@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const FundRaisingSchema = new mongoose.Schema({
   title: { type: String, required: true },
+  discription: { type: String, required: true },
   organiser: { type: mongoose.Schema.Types.ObjectId, ref: "Student", required: true },
   goalAmount: { type: Number, required: true },
   collectedAmount: { type: Number, default: 0 },

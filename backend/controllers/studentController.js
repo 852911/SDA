@@ -79,3 +79,23 @@ exports.signUp = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+exports.getStudentCount = async (req, res) => {
+  try {
+    // 1. Count students in DB
+    const totalStudents = await StudentModel.countDocuments();
+
+    // 2. Wrap result in OOP object
+    // (For example: we can create a static method in Student class to represent counts)
+    const summary = Student.getSummary(totalStudents);
+
+    // 3. Send response
+    res.status(200).json({
+      message: "Student count retrieved successfully",
+      data: summary
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -15,10 +15,17 @@ const studentSchema = new mongoose.Schema(
 
     organisedGroups: [{ type: mongoose.Schema.Types.ObjectId, ref: "StudyGroup" }],
     joinedGroups: [{ type: mongoose.Schema.Types.ObjectId, ref: "StudyGroup" }],
+    requestedFundRaisers: [{ type: mongoose.Schema.Types.ObjectId, ref: "FundRaising" }],
     organisedFundRaisers: [{ type: mongoose.Schema.Types.ObjectId, ref: "FundRaising" }],
     donationsGiven: [{ type: mongoose.Schema.Types.ObjectId, ref: "Donation" }],
 
-    notifications: [{ type: mongoose.Schema.Types.ObjectId, ref: "Notification" }]
+    notifications: [{ type: mongoose.Schema.Types.ObjectId, ref: "Notification" }],
+    lostAndFoundItems: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "LostAndFoundItem"
+      }
+    ]
 
   },
   { timestamps: true }

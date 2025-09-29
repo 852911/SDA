@@ -58,13 +58,21 @@ class Student extends User{
     this.organisedGroups = [];
     this.joinedGroups = [];
     this.organisedFundRaisers = [];
+    this.requestedFundRaisers = []; // add this
     this.donationsGiven = [];
+    this.lostAndFoundItems = [];
   }
   organiseStudyGroup( gpName, subj){
     const group = new StudyGroup(this, gpName, subj)
     this.organisedGroups.push(group)
     this.joinedGroups.push(group)
     return group
+  }
+   static getSummary(totalCount) {
+    return {
+      totalStudents: totalCount,
+      retrievedAt: new Date()
+    };
   }
   requestToJoinGroup(group) {
     group.requestToJoin(this);
@@ -91,9 +99,9 @@ class Student extends User{
     this.donationsGiven.push(donation);
     return donation;
   }
-  organiseFundRaiser(id, title, goalAmount) {
-    const fr = new FundRaising(id, title, this, goalAmount);
-    this.organisedFundRaisers.push(fr);
+  requestFundraiser(title, description, goalAmount) {
+    const fr = new FundRaising(null, title, description, this, goalAmount, 0, []);
+    this.requestedFundRaisers.push(fr);
     return fr;
   }
    viewOrganisedGroups() {
@@ -107,6 +115,24 @@ class Student extends User{
   }
   viewDonations() {
     return this.donationsGiven;
+  }
+  // Report a lost item
+  reportLostItem(title, description) {
+    const item = new LostAndFoundItem(Date.now(), title, description, this);
+    this.lostAndFoundItems.push(item); // reporter = this
+    return item;
+  }
+
+  // Report a found item (item reported by someone else)
+  reportFoundItem(item) {
+    item.markFound(this); // finder = this
+    this.lostAndFoundItems.push(item); // optional: track found items too
+    return item;
+  }
+
+  // Claim a lost item that was found
+  claimLostItem(item) {
+    item.claimItem(); // marks item as claimed
   }
 }
 class Degree {
@@ -126,29 +152,25 @@ class Campus {
 class Admin extends User{
   constructor(id, name, email, contact) {
     super(id, name, email, contact);
+    this.requestedFundRaisers = [];
   }
+   viewPendingFundraisers() {
+    return this.requestedFundRaisers.filter(f => f.isApproved === "no");
+  }
+
   approveFundraiser(fundraiser) {
     fundraiser.isApproved = "yes";
+    // remove from pending list
+    this.requestedFundRaisers = this.requestedFundRaisers.filter(f => f !== fundraiser);
     return `Fundraiser '${fundraiser.title}' approved by Admin ${this.name}`;
   }
+
   rejectFundraiser(fundraiser) {
     fundraiser.isApproved = "rejected";
     fundraiser.status = "closed";
+    // remove from pending list
+    this.requestedFundRaisers = this.requestedFundRaisers.filter(f => f !== fundraiser);
     return `Fundraiser '${fundraiser.title}' rejected by Admin ${this.name}`;
-  }
-  removeStudyGroup(group) {
-    group.members.forEach(student => {
-      student.joinedGroups = student.joinedGroups.filter(g => g !== group);
-      student.organisedGroups = student.organisedGroups.filter(g => g !== group);
-    });
-    return `Study group '${group.name}' removed by Admin ${this.name}`;
-  }
-  viewPendingFundraisers(fundraisersList) {
-    return fundraisersList.filter(f => f.isApproved === "no");
-  }
-  closeFundraiser(fundraiser) {
-    fundraiser.status = "closed";
-    return `Fundraiser '${fundraiser.title}' has been closed by Admin ${this.name}`;
   }
 }
 
@@ -201,10 +223,11 @@ class StudyGroup
 }
 
 class Notification{
-  constructor(message){
+  constructor(message, date = new Date(), isRead = false){
     this.message = message
-    this.isRead = false
-    this.date =  new Date();
+    this.isRead = isRead
+    this.date =  new Date(date);
+    this._id = null
   }
    markAsRead() {
     this.isRead = true;
@@ -218,6 +241,15 @@ class Notification{
   // check if read
   isNotificationRead() {
     return this.isRead;
+  }
+  viewObj() {
+    // Object format for frontend navigation
+    return {
+      _id: this._id,
+      message: this.message,
+      date: this.date,
+      isRead: this.isRead,
+    };
   }
 
   // return a formatted view of the notification
@@ -263,10 +295,11 @@ class Donation
 
 class FundRaising
 {
-  constructor(id, title, organiser, goalAmount, collectedAmount, donations)
+  constructor(id, title, discription, organiser, goalAmount, collectedAmount, donations)
   {
     this.id = id
     this.title = title
+    this.discription = discription
     this.organiser = organiser
     this.goalAmount = goalAmount
     this.collectedAmount = collectedAmount
@@ -302,4 +335,39 @@ class FundRaising
   }
 }
 
-module.exports = { User, Student, Admin, StudyGroup, Notification, Message, FundRaising, Donation, Campus, Degree}; // ✅ export as object
+class LostAndFoundItem {
+  constructor(id, title, description, reporter, finder = null, isClaimed = false, dateReported = new Date()) {
+    this.id = id;                 // unique identifier
+    this.title = title;           // e.g., "Lost Backpack"
+    this.description = description;
+    this.reporter = reporter;     // the student who lost the item
+    this.finder = finder;         // the student who found it (optional)
+    this.isClaimed = isClaimed;   // status
+    this.dateReported = new Date(dateReported);
+  }
+
+  markFound(finder) {
+    this.finder = finder;       // record who found it
+    this.isClaimed = false;     // not yet claimed
+  }
+
+  claimItem() {
+    if (!this.finder) throw new Error("Item not found yet");
+    this.isClaimed = true;      // now claimed by the reporter
+  }
+
+  viewDetails() {
+    return {
+      id: this.id,
+      title: this.title,
+      description: this.description,
+      reporter: this.reporter.name,
+      finder: this.finder ? this.finder.name : null,
+      isClaimed: this.isClaimed,
+      dateReported: this.dateReported,
+    };
+  }
+}
+
+
+module.exports = { User, Student, Admin, StudyGroup, Notification, Message, FundRaising, Donation, Campus, Degree, LostAndFoundItem}; // ✅ export as object

@@ -1,9 +1,0 @@
-# Node
-node_modules/
-.env
-
-# React
-build/
-node_modules/
-.env
-build/

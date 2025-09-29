@@ -6,15 +6,9 @@ const adminSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     contact: { type: String },
     password: { type: String, required: true }, // hashed password
+    notifications: [{ type: mongoose.Schema.Types.ObjectId, ref: "Notification" }],
+    requestedFundRaisers: [{ type: mongoose.Schema.Types.ObjectId, ref: "FundRaising" }] // new
 
-    // common field with User
-    notifications: [
-      {
-        message: String,
-        isRead: { type: Boolean, default: false },
-        date: { type: Date, default: Date.now }
-      }
-    ]
   },
   { timestamps: true }
 );
